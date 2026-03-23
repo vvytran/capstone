@@ -1,48 +1,75 @@
 # app.R
-# Hubbard Brook Experimental Forest: Watersheds 3 & 9
-
 library(shiny)
 library(tidyverse)
 library(ggplot2)
-library(readxl)
 library(readr)
+library(readxl)
 
 # ----------------------------
-# File names (exactly as your script)
+# Hourly file names
 # ----------------------------
-FILE_SNOW <- "snow depth wells.xlsx"
+FILE_SNOW_W3 <- "snowdepthw3_hourly.csv"
+FILE_SNOW_W9 <- "snowdepthw9_hourly.csv"
 
-FILE_W3_TDR    <- "w3 soil mois 5 min tdr.xlsx"
-FILE_W3_TERROS <- "w3 soil mois 5 min terros.xlsx"
+FILE_W3_TDR_EPOD    <- "epodzol_w3_soi_mois_5_min_tdr_hourly.csv"
+FILE_W3_TDR_BHS     <- "Bhs_w3_soi_mois_5_min_tdr_hourly.csv"
+FILE_W3_TDR_TYP     <- "typ_w3_soi_mois_5_min_tdr_hourly.csv"
+FILE_W3_TERROS_EPOD <- "epodzol_w3_soi_mois_5_min_terros_hourly.csv"
+FILE_W3_TERROS_BHS  <- "Bhs_w3_soi_mois_5_min_terros_hourly.csv"
+FILE_W3_TERROS_TYP  <- "typ_w3_soi_mois_5_min_terros_hourly.csv"
 
-FILE_W9_TDR    <- "w9 tdr 5 min.xlsx"
-FILE_W9_TERROS <- "w9 terros 5 min.xlsx"
+FILE_W9_TDR_EPOD    <- "epodzol_w9_soi_mois_5_min_tdr_hourly.csv"
+FILE_W9_TDR_BHS     <- "Bhs_w9_soi_mois_5_min_tdr_hourly.csv"
+FILE_W9_TDR_TYP     <- "typ_w9_soi_mois_5_min_tdr_hourly.csv"
+FILE_W9_TERROS_EPOD <- "epodzol_w9_soi_mois_5_min_terros_hourly.csv"
+FILE_W9_TERROS_BHS  <- "Bhs_w9_soi_mois_5_min_terros_hourly.csv"
+FILE_W9_TERROS_TYP  <- "typ_w9_soi_mois_5_min_terros_hourly.csv"
 
-FILE_WELL_159 <- "well 159 record.xlsx"
-FILE_WELL_176 <- "well 176 record.xlsx"
-FILE_WELL_179 <- "well 179 record.xlsx"
-FILE_WELL_42  <- "well 42_4_d1.xlsx"
-FILE_WELL_N1  <- "well N1 record.xlsx"
-FILE_WELL_N5  <- "well N5 record.xlsx"
+FILE_WELL_159 <- "well_159_record_hourly.csv"
+FILE_WELL_176 <- "well_176_record_hourly.csv"
+FILE_WELL_179 <- "well_179_record_hourly.csv"
+FILE_WELL_42  <- "well_42_4_d1_hourly.csv"
+FILE_WELL_N1  <- "well_N1_record_hourly.csv"
+FILE_WELL_N5  <- "well_N5_record_hourly.csv"
 
-FILE_W3_PRECIP <- "HBEF_W3precipitation_15min.csv"
-FILE_W9_PRECIP <- "HBEF_W9precipitation_15min.csv"
+FILE_W3_PRECIP <- "HBEF_W3precipitation_15min_hourly.csv"
+FILE_W9_PRECIP <- "HBEF_W9precipitation_15min_hourly.csv"
 
-FILE_W3_STREAM <- "w3_stmflow_1957-2012.csv"
-FILE_W9_STREAM <- "w9_stmflow_1995-2012.csv"
+FILE_W3_STREAM <- "w3_stmflow_1957_2012_hourly.csv"
+FILE_W9_STREAM <- "w9_stmflow_1995_2012_hourly.csv"
 
 # ----------------------------
-# Soil sheet-name mapping (W3 vs W9 capitalization)
+# Hourly soil file mapping
 # ----------------------------
-soil_sheet_map <- list(
-  `3` = c(epod = "e podzol", bhs = "Bhs", typ = "typ"),
-  `9` = c(epod = "E pod",    bhs = "Bhs", typ = "Typ")
+soil_file_map <- list(
+  `3` = list(
+    tdr = c(
+      epod = FILE_W3_TDR_EPOD,
+      bhs  = FILE_W3_TDR_BHS,
+      typ  = FILE_W3_TDR_TYP
+    ),
+    terros = c(
+      epod = FILE_W3_TERROS_EPOD,
+      bhs  = FILE_W3_TERROS_BHS,
+      typ  = FILE_W3_TERROS_TYP
+    )
+  ),
+  `9` = list(
+    tdr = c(
+      epod = FILE_W9_TDR_EPOD,
+      bhs  = FILE_W9_TDR_BHS,
+      typ  = FILE_W9_TDR_TYP
+    ),
+    terros = c(
+      epod = FILE_W9_TERROS_EPOD,
+      bhs  = FILE_W9_TERROS_BHS,
+      typ  = FILE_W9_TERROS_TYP
+    )
+  )
 )
 
 # ----------------------------
-# Well mapping (per your correction)
-# Watershed 3: 42_4_d1, N1, N5
-# Watershed 9: 159, 176, 179
+# Well mapping
 # ----------------------------
 wells_by_ws <- list(
   `3` = tibble(
@@ -65,15 +92,21 @@ as_posix <- function(x) {
 
 read_soil_for_selection <- function(watershed, soil_key) {
   ws <- as.character(watershed)
-  sheet <- soil_sheet_map[[ws]][[soil_key]]
   
-  tdr_file    <- if (watershed == 3) FILE_W3_TDR else FILE_W9_TDR
-  terros_file <- if (watershed == 3) FILE_W3_TERROS else FILE_W9_TERROS
+  tdr <- read_csv(soil_file_map[[ws]]$tdr[[soil_key]], show_col_types = FALSE) %>%
+    mutate(
+      TIMESTAMP = as_posix(hour),
+      sensor = "TDR"
+    ) %>%
+    select(-hour)
   
-  tdr <- read_excel(tdr_file, sheet = sheet) %>% mutate(sensor = "TDR")
-  ter <- read_excel(terros_file, sheet = sheet) %>% mutate(sensor = "Terros")
-  
-  bind_rows(tdr, ter) %>% mutate(TIMESTAMP = as_posix(TIMESTAMP))
+  ter <- read_csv(soil_file_map[[ws]]$terros[[soil_key]], show_col_types = FALSE) %>%
+    mutate(
+      TIMESTAMP = as_posix(hour),
+      sensor = "Terros"
+    ) %>%
+    select(-hour) %>%
+    mutate(across(where(is.numeric), ~ ifelse(. < 0, NA, .)))
 }
 
 soil_long <- function(df) {
@@ -91,40 +124,66 @@ read_wells_for_ws <- function(watershed) {
   ws_tbl <- wells_by_ws[[as.character(watershed)]]
   
   purrr::map2_dfr(ws_tbl$well_id, ws_tbl$file, \(id, fp) {
-    read_excel(fp) %>%
+    read_csv(fp, show_col_types = FALSE) %>%
       transmute(
-        datetime = as_posix(.data$`date-time`),
-        wt_cm    = .data$`water table depth (cm)`,
-        well_id  = id
+        datetime = as_posix(hour),
+        wt_cm = `water table depth (cm)`,
+        well_id = id
       ) %>%
       filter(!is.na(datetime), !is.na(wt_cm))
   })
 }
 
 # ----------------------------
-# Load watershed-only datasets once
+# Load hourly datasets once
 # ----------------------------
 snow_all <- bind_rows(
-  read_excel(FILE_SNOW, sheet = "snow depth w3") %>% mutate(watershed = 3L),
-  read_excel(FILE_SNOW, sheet = "snow depth w9") %>% mutate(watershed = 9L)
-) %>%
-  mutate(date = as.Date(date))
+  read_csv(FILE_SNOW_W3, show_col_types = FALSE) %>%
+    transmute(
+      watershed = 3L,
+      date = as_posix(hour),
+      snow_cm = hourly_snow_depth
+    ),
+  read_csv(FILE_SNOW_W9, show_col_types = FALSE) %>%
+    transmute(
+      watershed = 9L,
+      date = as_posix(hour),
+      snow_cm = hourly_snow_depth
+    )
+)
 
 precip_all <- bind_rows(
-  read_csv(FILE_W3_PRECIP, show_col_types = FALSE) %>% mutate(watershed = 3L),
-  read_csv(FILE_W9_PRECIP, show_col_types = FALSE) %>% mutate(watershed = 9L)
-) %>%
-  mutate(DateTime = as_posix(.data$DateTime))
+  read_csv(FILE_W3_PRECIP, show_col_types = FALSE) %>%
+    transmute(
+      watershed = 3L,
+      DateTime = as_posix(hour),
+      precip = hourly_precip
+    ),
+  read_csv(FILE_W9_PRECIP, show_col_types = FALSE) %>%
+    transmute(
+      watershed = 9L,
+      DateTime = as_posix(hour),
+      precip = hourly_precip
+    )
+)
 
-# Streamflow CSVs (your files use DATETIME, so rename it)
 stream_all <- bind_rows(
   read_csv(FILE_W3_STREAM, show_col_types = FALSE) %>%
-    rename(DateTime = DATETIME) %>%
-    mutate(DateTime = as_posix(.data$DateTime), watershed = 3L),
-  
+    transmute(
+      watershed = 3L,
+      DateTime = as_posix(hour),
+      Gage_ft,
+      Discharge_cfs,
+      Discharge_ls
+    ),
   read_csv(FILE_W9_STREAM, show_col_types = FALSE) %>%
-    rename(DateTime = DATETIME) %>%
-    mutate(DateTime = as_posix(.data$DateTime), watershed = 9L)
+    transmute(
+      watershed = 9L,
+      DateTime = as_posix(hour),
+      Gage_ft,
+      Discharge_cfs,
+      Discharge_ls
+    )
 )
 
 # ----------------------------
@@ -134,7 +193,6 @@ ui <- fluidPage(
   titlePanel("Hubbard Brook Experimental Forest: Watersheds 3 & 9"),
   
   fluidRow(
-    # Left third
     column(
       width = 4,
       wellPanel(
@@ -157,20 +215,17 @@ ui <- fluidPage(
           ),
           selected = "cfs"
         ),
-        
-        # Filter/Apply button (confirm selection)
         actionButton("apply_filters", "Filter", class = "btn-primary"),
         br(), br(),
         helpText("Change selectors, then click Filter to update plots.")
       )
     ),
     
-    # Right two-thirds
     column(
       width = 8,
-      plotOutput("soil_plot",   height = 260),
-      plotOutput("wt_plot",     height = 260),
-      plotOutput("snow_plot",   height = 260),
+      plotOutput("soil_plot", height = 260),
+      plotOutput("wt_plot", height = 260),
+      plotOutput("snow_plot", height = 260),
       plotOutput("precip_plot", height = 260),
       plotOutput("stream_plot", height = 260)
     )
@@ -182,7 +237,6 @@ ui <- fluidPage(
 # ----------------------------
 server <- function(input, output, session) {
   
-  # Only update plots after the user clicks Filter
   filters <- eventReactive(input$apply_filters, {
     list(
       watershed = as.integer(input$watershed),
@@ -191,7 +245,6 @@ server <- function(input, output, session) {
     )
   }, ignoreInit = FALSE)
   
-  # Soil moisture (watershed + soil type)
   soil_df_long <- reactive({
     f <- filters()
     df <- read_soil_for_selection(f$watershed, f$soil_type)
@@ -205,47 +258,56 @@ server <- function(input, output, session) {
     soil_label <- c(epod = "E Podzol", bhs = "Bhs", typ = "Typ")[[f$soil_type]]
     
     ggplot(df, aes(TIMESTAMP, value, group = interaction(sensor, series))) +
+      geom_point(size = 0.5, alpha = 0.5) +
       geom_line() +
       facet_wrap(~ sensor, scales = "free_y", ncol = 1) +
       theme_classic() +
       labs(
         title = paste0("Soil Moisture in Watershed ", f$watershed, " (", soil_label, ")"),
         x = "",
-        y = "Soil moisture (by series)"
+        y = "Soil moisture"
       )
   })
   
-  # Water table (watershed only)
   wt_df <- reactive({
     f <- filters()
     df <- read_wells_for_ws(f$watershed)
-    validate(need(nrow(df) > 0, "No water table data found for this watershed (check files/mapping)."))
+    validate(need(nrow(df) > 0, "No water table data found."))
     df
   })
   
   output$wt_plot <- renderPlot({
     f <- filters()
-    df <- wt_df()
+    df <- wt_df() %>%
+      filter(wt_cm >= 0, wt_cm <= 400)  # filter invalid depths
     
-    # Different color for each well
     ggplot(df, aes(datetime, wt_cm, color = well_id, group = well_id)) +
+      geom_point(size = 0.6, alpha = 0.7) +
       geom_line() +
+      scale_y_reverse() +
       theme_classic() +
+      theme(
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(0, 0, -10, 0)
+      ) +
       labs(
         title = paste("Water Table Depth (Wells) - Watershed", f$watershed),
         x = "",
         y = "Water Table Depth (cm)",
-        color = "Well"
+        color = NULL
       )
   })
   
-  # Snow depth (watershed only)
   output$snow_plot <- renderPlot({
     f <- filters()
-    df <- snow_all %>% filter(watershed == f$watershed)
+    df <- snow_all %>%
+      filter(watershed == f$watershed, snow_cm > 0)
+    
     validate(need(nrow(df) > 0, "No snow depth data found."))
     
-    ggplot(df, aes(date, .data$`snow depth (cm)`)) +
+    ggplot(df, aes(date, snow_cm)) +
+      geom_point(size = 0.6, alpha = 0.6) +
       geom_line() +
       theme_classic() +
       labs(
@@ -255,27 +317,24 @@ server <- function(input, output, session) {
       )
   })
   
-  # Precipitation (watershed only)
   output$precip_plot <- renderPlot({
     f <- filters()
     df <- precip_all %>% filter(watershed == f$watershed)
-    validate(need(nrow(df) > 0, "No precipitation data found."))
     
     ggplot(df, aes(DateTime, precip)) +
+      geom_point(size = 0.6, alpha = 0.6) +
       geom_line() +
       theme_classic() +
       labs(
         title = paste("Precipitation in Watershed", f$watershed),
         x = "",
-        y = "Precipitation (cm)"
+        y = "Hourly Precipitation"
       )
   })
   
-  # Streamflow (watershed + metric)
   stream_series <- reactive({
     f <- filters()
     df <- stream_all %>% filter(watershed == f$watershed)
-    validate(need(nrow(df) > 0, "No streamflow data found."))
     
     if (f$stream_metric == "gage") {
       df %>% transmute(DateTime, value = Gage_ft, ylab = "Gage Height (ft)")
@@ -291,6 +350,7 @@ server <- function(input, output, session) {
     s <- stream_series()
     
     ggplot(s, aes(DateTime, value)) +
+      geom_point(size = 0.6, alpha = 0.6) +
       geom_line() +
       theme_classic() +
       labs(
