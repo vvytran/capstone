@@ -258,7 +258,7 @@ well_N1_record_hourly  <- well_N1_record %>%
 
 #well N5 records 
 well_N5_record <- read_excel("well N5 record.xlsx")
-well_N5_record_hourly  <- well_N5_record %>%
+well_N5_record_hourly <- well_N5_record %>%
   mutate(`date-time` = as.POSIXct(`date-time`, format = "%Y-%m-%d %H:%M:%S"),
          hour = floor_date(`date-time`, "hour")) %>%
   group_by(hour) %>%
