@@ -204,6 +204,30 @@ read_wells_for_ws <- function(watershed) {
   })
 }
 
+apply_shared_zoom <- function(p, zoom_range, time_values) {
+  if (is.null(zoom_range) || length(time_values) == 0) {
+    return(p)
+  }
+  
+  time_values <- time_values[!is.na(time_values)]
+  
+  if (length(time_values) == 0) {
+    return(p)
+  }
+  
+  data_min <- min(time_values)
+  data_max <- max(time_values)
+  
+  zoom_min <- max(zoom_range$xmin, data_min)
+  zoom_max <- min(zoom_range$xmax, data_max)
+  
+  if (is.na(zoom_min) || is.na(zoom_max) || zoom_min >= zoom_max) {
+    return(p)
+  }
+  
+  p + coord_cartesian(xlim = c(zoom_min, zoom_max))
+}
+
 # ----------------------------
 # Load hourly datasets once
 # ----------------------------
@@ -316,7 +340,7 @@ ui <- fluidPage(
         font-size: 16px;
         padding: 8px 16px;
       }
-      .collapse-btn {
+      .collapse-btn, .zoom-btn {
         background-color: #DCEAF7;
         border: 1px solid #A9C4DD;
         color: #163A5F;
@@ -327,6 +351,11 @@ ui <- fluidPage(
         width: 100%;
         text-align: left;
         margin-bottom: 12px;
+      }
+      .zoom-btn {
+        width: auto;
+        text-align: center;
+        margin-bottom: 0;
       }
       .form-group label, .checkbox label, .help-block {
         font-size: 16px;
@@ -396,40 +425,49 @@ ui <- fluidPage(
             max = as.Date(date_max)
           ),
           
-          actionButton("apply_filters", "Apply Filters", class = "btn-primary"),
-          br(), br(),
-          helpText("Select one or more watersheds and soil types, then click Apply Filters.")
+          fluidRow(
+            column(
+              width = 6,
+              actionButton("apply_filters", "Apply Filters", class = "btn-primary")
+            ),
+            column(
+              width = 6,
+              actionButton("reset_zoom", "Reset Shared Zoom", class = "zoom-btn")
+            )
+          ),
+          br(),
+          helpText("Brush on any plot to zoom all plots to the same date range. Select Reset Shared Zoom to return to original date ranges.")
         )
       ),
       
       div(
         class = "plot-card",
         div(class = "card-title", "Soil Moisture"),
-        plotOutput("soil_plot", height = 360)
+        plotOutput("soil_plot", height = 360, brush = "soil_brush")
       ),
       
       div(
         class = "plot-card",
         div(class = "card-title", "Water Table Depth"),
-        plotOutput("wt_plot", height = 360)
+        plotOutput("wt_plot", height = 360, brush = "wt_brush")
       ),
       
       div(
         class = "plot-card",
         div(class = "card-title", "Snow Depth"),
-        plotOutput("snow_plot", height = 320)
+        plotOutput("snow_plot", height = 320, brush = "snow_brush")
       ),
       
       div(
         class = "plot-card",
         div(class = "card-title", "Precipitation"),
-        plotOutput("precip_plot", height = 320)
+        plotOutput("precip_plot", height = 320, brush = "precip_brush")
       ),
       
       div(
         class = "plot-card",
         div(class = "card-title", "Streamflow"),
-        plotOutput("stream_plot", height = 360)
+        plotOutput("stream_plot", height = 360, brush = "stream_brush")
       )
     )
   )
@@ -441,6 +479,18 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   controls_open <- reactiveVal(TRUE)
+  shared_zoom <- reactiveVal(NULL)
+  
+  update_shared_zoom <- function(brush_obj) {
+    if (!is.null(brush_obj) && !is.null(brush_obj$xmin) && !is.null(brush_obj$xmax)) {
+      shared_zoom(
+        list(
+          xmin = as.POSIXct(brush_obj$xmin, origin = "1970-01-01", tz = "UTC"),
+          xmax = as.POSIXct(brush_obj$xmax, origin = "1970-01-01", tz = "UTC")
+        )
+      )
+    }
+  }
   
   observeEvent(input$toggle_controls, {
     controls_open(!controls_open())
@@ -449,6 +499,36 @@ server <- function(input, output, session) {
       "toggle_controls",
       label = if (controls_open()) "Hide Filters" else "Show Filters"
     )
+  })
+  
+  observeEvent(input$soil_brush, {
+    update_shared_zoom(input$soil_brush)
+  })
+  
+  observeEvent(input$wt_brush, {
+    update_shared_zoom(input$wt_brush)
+  })
+  
+  observeEvent(input$snow_brush, {
+    update_shared_zoom(input$snow_brush)
+  })
+  
+  observeEvent(input$precip_brush, {
+    update_shared_zoom(input$precip_brush)
+  })
+  
+  observeEvent(input$stream_brush, {
+    update_shared_zoom(input$stream_brush)
+  })
+  
+  observeEvent(input$reset_zoom, {
+    shared_zoom(NULL)
+    
+    session$resetBrush("soil_brush")
+    session$resetBrush("wt_brush")
+    session$resetBrush("snow_brush")
+    session$resetBrush("precip_brush")
+    session$resetBrush("stream_brush")
   })
   
   output$show_controls <- reactive({
@@ -492,7 +572,7 @@ server <- function(input, output, session) {
   output$soil_plot <- renderPlot({
     df <- soil_df_long()
     
-    ggplot(
+    p <- ggplot(
       df,
       aes(
         TIMESTAMP,
@@ -511,6 +591,8 @@ server <- function(input, output, session) {
         y = "Soil moisture",
         color = "Depth (cm)"
       )
+    
+    apply_shared_zoom(p, shared_zoom(), df$TIMESTAMP)
   })
   
   wt_df <- reactive({
@@ -532,7 +614,7 @@ server <- function(input, output, session) {
   output$wt_plot <- renderPlot({
     df <- wt_df()
     
-    ggplot(df, aes(datetime, wt_cm, color = well_id, group = well_id)) +
+    p <- ggplot(df, aes(datetime, wt_cm, color = well_id, group = well_id)) +
       geom_line(linewidth = 1.05, alpha = 0.98) +
       scale_color_manual(values = well_colors) +
       scale_y_reverse() +
@@ -549,6 +631,8 @@ server <- function(input, output, session) {
         y = "Water Table Depth (cm)",
         color = "Well"
       )
+    
+    apply_shared_zoom(p, shared_zoom(), df$datetime)
   })
   
   output$snow_plot <- renderPlot({
@@ -566,7 +650,7 @@ server <- function(input, output, session) {
     
     validate(need(nrow(df) > 0, "No snow depth data found for this selection and date range."))
     
-    ggplot(df, aes(date, snow_cm, color = factor(watershed), group = watershed)) +
+    p <- ggplot(df, aes(date, snow_cm, color = factor(watershed), group = watershed)) +
       geom_line(linewidth = 1.05, alpha = 0.98) +
       scale_color_manual(values = watershed_colors) +
       scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
@@ -577,6 +661,8 @@ server <- function(input, output, session) {
         y = "Snow Depth (cm)",
         color = "Watershed"
       )
+    
+    apply_shared_zoom(p, shared_zoom(), df$date)
   })
   
   output$precip_plot <- renderPlot({
@@ -593,7 +679,7 @@ server <- function(input, output, session) {
     
     validate(need(nrow(df) > 0, "No precipitation data found for this selection and date range."))
     
-    ggplot(df, aes(DateTime, precip, color = factor(watershed), group = watershed)) +
+    p <- ggplot(df, aes(DateTime, precip, color = factor(watershed), group = watershed)) +
       geom_line(linewidth = 1.05, alpha = 0.98) +
       scale_color_manual(values = watershed_colors) +
       scale_y_reverse() +
@@ -604,6 +690,8 @@ server <- function(input, output, session) {
         y = "Hourly Precipitation",
         color = "Watershed"
       )
+    
+    apply_shared_zoom(p, shared_zoom(), df$DateTime)
   })
   
   stream_long <- reactive({
@@ -661,7 +749,9 @@ server <- function(input, output, session) {
   output$stream_plot <- renderPlot({
     df <- stream_long()
     
-    ggplot(df, aes(DateTime, value, color = factor(watershed), group = watershed)) +
+    validate(need(nrow(df) > 0, "No streamflow data available for the current selection."))
+    
+    p <- ggplot(df, aes(DateTime, value, color = factor(watershed), group = watershed)) +
       geom_line(linewidth = 1.05, alpha = 0.98) +
       scale_color_manual(values = watershed_colors) +
       facet_wrap(~ metric, ncol = 1, scales = "free_y") +
@@ -672,6 +762,8 @@ server <- function(input, output, session) {
         y = NULL,
         color = "Watershed"
       )
+    
+    apply_shared_zoom(p, shared_zoom(), df$DateTime)
   })
 }
 
