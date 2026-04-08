@@ -274,35 +274,35 @@ HBEF_W9precipitation_15min_hourly <-  HBEF_W9precipitation_15min %>%
 
 #watershed 3 stream flow
 
-w3_stmflow_1957_2012 <- read_csv("w3_stmflow_1957-2012.csv")
+w3_stmflow_2013_2024_5min <- read_csv("w3_stmflow_2013-2024_5min.csv")
 
 #watershed 3 hourly
 
-w3_stmflow_1957_2012_hourly<- w3_stmflow_1957_2012 %>%
-  mutate(hour = floor_date(as.POSIXct(DATETIME, format="%Y-%m-%d %H:%M:%S"), "hour")) %>%
-  group_by(hour) %>%
-  summarize(
-    Gage_ft = mean(Gage_ft),
-    Discharge_cfs = sum(Discharge_cfs),
-    Discharge_ls = sum(Discharge_ls)
+w3_stmflow_2013_2024_hourly <- w3_stmflow_2013_2024_5min %>%
+  mutate(
+    hour = floor_date(as.POSIXct(DATETIME, format = "%Y-%m-%d %H:%M:%S"), "hour")
   ) %>%
-  ungroup()
+  group_by(hour) %>%
+  summarise(
+    Discharge_ls = mean(Discharge_ls, na.rm = TRUE),
+    .groups = "drop"
+  )
 
 #Watershed 9 stream flow
 
-w9_stmflow_1995_2012 <- read_csv("w9_stmflow_1995-2012.csv")
+w9_stmflow_2013_2024_5min <- read_csv("w9_stmflow_2013-2024_5min.csv")
 
 #watershed 9 stream flow hourly
 
-w9_stmflow_1995_2012_hourly<- w9_stmflow_1995_2012 %>%
-  mutate(hour = floor_date(as.POSIXct(DATETIME, format="%Y-%m-%d %H:%M:%S"), "hour")) %>%
-  group_by(hour) %>%
-  summarize(
-    Gage_ft = mean(Gage_ft),
-    Discharge_cfs = sum(Discharge_cfs),
-    Discharge_ls = sum(Discharge_ls)
+w9_stmflow_2013_2024_hourly <- w9_stmflow_2013_2024_5min %>%
+  mutate(
+    hour = floor_date(as.POSIXct(DATETIME, format = "%Y-%m-%d %H:%M:%S"), "hour")
   ) %>%
-  ungroup()
+  group_by(hour) %>%
+  summarise(
+    Discharge_ls = mean(Discharge_ls, na.rm = TRUE),
+    .groups = "drop"
+  )
 
 #downloading all of the houlry data
 
@@ -328,5 +328,5 @@ write.csv(well_N1_record_hourly, "well_N1_record_hourly.csv",  row.names =  FALS
 write.csv(well_N5_record_hourly, "well_N5_record_hourly.csv", row.names = FALSE)
 write.csv(HBEF_W3precipitation_15min_hourly, "HBEF_W3precipitation_15min_hourly.csv", row.names = FALSE)
 write.csv(HBEF_W9precipitation_15min_hourly, "HBEF_W9precipitation_15min_hourly.csv", row.names = FALSE)
-write.csv(w3_stmflow_1957_2012_hourly, "w3_stmflow_1957_2012_hourly.csv", row.names = FALSE)
-write.csv(w9_stmflow_1995_2012_hourly, "w9_stmflow_1995_2012_hourly.csv", row.names = FALSE)
+write.csv(w3_stmflow_2013_2024_hourly, "w3_stmflow_2013_2024_hourly.csv", row.names = FALSE)
+write.csv(w9_stmflow_2013_2024_hourly, "w9_stmflow_2013_2024_hourly.csv", row.names = FALSE)

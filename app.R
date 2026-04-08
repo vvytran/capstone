@@ -37,8 +37,8 @@ FILE_WELL_N5  <- "well_N5_record_hourly.csv"
 FILE_W3_PRECIP <- "HBEF_W3precipitation_15min_hourly.csv"
 FILE_W9_PRECIP <- "HBEF_W9precipitation_15min_hourly.csv"
 
-FILE_W3_STREAM <- "w3_stmflow_1957_2012_hourly.csv"
-FILE_W9_STREAM <- "w9_stmflow_1995_2012_hourly.csv"
+FILE_W3_STREAM <- "w3_stmflow_2013_2024_hourly.csv"
+FILE_W9_STREAM <- "w9_stmflow_2013_2024_hourly.csv"
 
 # ----------------------------
 # Soil file mapping
@@ -306,16 +306,12 @@ stream_all <- bind_rows(
     transmute(
       watershed = 3L,
       DateTime = as_posix(hour),
-      Gage_ft,
-      Discharge_cfs,
       Discharge_ls
     ),
   read_csv(FILE_W9_STREAM, show_col_types = FALSE) %>%
     transmute(
       watershed = 9L,
       DateTime = as_posix(hour),
-      Gage_ft,
-      Discharge_cfs,
       Discharge_ls
     )
 )
@@ -464,12 +460,8 @@ ui <- fluidPage(
                   checkboxGroupInput(
                     "stream_metrics",
                     "Streamflow metrics",
-                    choices = c(
-                      "Gage height" = "gage",
-                      "Discharge (cfs)" = "cfs",
-                      "Discharge (L/s)" = "ls"
-                    ),
-                    selected = c("cfs")
+                    choices = c("Discharge (L/s)" = "ls"),
+                    selected = c("ls")
                   )
                 )
               ),
@@ -584,7 +576,7 @@ ui <- fluidPage(
           tags$li("All plots share the same brushed zoom window."),
           tags$li("Hover details are shown below each plot rather than directly on the graph."),
           tags$li("Negative Terros values are removed before plotting."),
-          tags$li("Water-table values below 0 cm or above 100 cm are removed before plotting.")
+          tags$li("Water-table values below 0 cm or above 500 cm are removed before plotting.")
         )
       )
     )
@@ -682,7 +674,7 @@ server <- function(input, output, session) {
     end_dt   <- as.POSIXct(f$date_range[2], tz = "UTC") + 24 * 60 * 60 - 1
     
     df <- purrr::map_dfr(f$watersheds, read_wells_for_ws) %>%
-      filter(wt_cm >= 0, wt_cm <= 100) %>%
+      filter(wt_cm >= 0, wt_cm <= 500) %>%
       filter(datetime >= start_dt, datetime <= end_dt)
     
     validate(need(nrow(df) > 0, "No water table data found for this selection and date range."))
@@ -739,39 +731,13 @@ server <- function(input, output, session) {
     
     validate(need(nrow(df) > 0, "No streamflow data found for this selection and date range."))
     
-    out <- list()
-    
-    if ("gage" %in% f$stream_metrics) {
-      out[[length(out) + 1]] <- df %>%
-        transmute(
-          watershed,
-          DateTime,
-          metric = "Gage height",
-          value = Gage_ft
-        )
-    }
-    
-    if ("cfs" %in% f$stream_metrics) {
-      out[[length(out) + 1]] <- df %>%
-        transmute(
-          watershed,
-          DateTime,
-          metric = "Discharge (cfs)",
-          value = Discharge_cfs
-        )
-    }
-    
-    if ("ls" %in% f$stream_metrics) {
-      out[[length(out) + 1]] <- df %>%
-        transmute(
-          watershed,
-          DateTime,
-          metric = "Discharge (L/s)",
-          value = Discharge_ls
-        )
-    }
-    
-    bind_rows(out)
+    df %>%
+      transmute(
+        watershed,
+        DateTime,
+        metric = "Discharge (L/s)",
+        value = Discharge_ls
+      )
   })
   
   output$soil_plot <- renderPlot({
