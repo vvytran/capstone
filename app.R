@@ -13,19 +13,13 @@ library(readr)
 FILE_SNOW_W3 <- "snowdepthw3_hourly.csv"
 FILE_SNOW_W9 <- "snowdepthw9_hourly.csv"
 
-FILE_W3_TDR_EPOD    <- "epodzol_w3_soi_mois_5_min_tdr_hourly.csv"
-FILE_W3_TDR_BHS     <- "Bhs_w3_soi_mois_5_min_tdr_hourly.csv"
-FILE_W3_TDR_TYP     <- "typ_w3_soi_mois_5_min_tdr_hourly.csv"
-FILE_W3_TERROS_EPOD <- "epodzol_w3_soi_mois_5_min_terros_hourly.csv"
-FILE_W3_TERROS_BHS  <- "Bhs_w3_soi_mois_5_min_terros_hourly.csv"
-FILE_W3_TERROS_TYP  <- "typ_w3_soi_mois_5_min_terros_hourly.csv"
+FILE_W3_TDR_EPOD <- "epodzol_w3_soi_mois_5_min_tdr_hourly.csv"
+FILE_W3_TDR_BHS  <- "Bhs_w3_soi_mois_5_min_tdr_hourly.csv"
+FILE_W3_TDR_TYP  <- "typ_w3_soi_mois_5_min_tdr_hourly.csv"
 
-FILE_W9_TDR_EPOD    <- "epodzol_w9_soi_mois_5_min_tdr_hourly.csv"
-FILE_W9_TDR_BHS     <- "Bhs_w9_soi_mois_5_min_tdr_hourly.csv"
-FILE_W9_TDR_TYP     <- "typ_w9_soi_mois_5_min_tdr_hourly.csv"
-FILE_W9_TERROS_EPOD <- "epodzol_w9_soi_mois_5_min_terros_hourly.csv"
-FILE_W9_TERROS_BHS  <- "Bhs_w9_soi_mois_5_min_terros_hourly.csv"
-FILE_W9_TERROS_TYP  <- "typ_w9_soi_mois_5_min_terros_hourly.csv"
+FILE_W9_TDR_EPOD <- "epodzol_w9_soi_mois_5_min_tdr_hourly.csv"
+FILE_W9_TDR_BHS  <- "Bhs_w9_soi_mois_5_min_tdr_hourly.csv"
+FILE_W9_TDR_TYP  <- "typ_w9_soi_mois_5_min_tdr_hourly.csv"
 
 FILE_WELL_159 <- "well_159_record_hourly.csv"
 FILE_WELL_176 <- "well_176_record_hourly.csv"
@@ -44,29 +38,15 @@ FILE_W9_STREAM <- "w9_stmflow_2013_2024_hourly.csv"
 # Soil file mapping
 # ----------------------------
 soil_file_map <- list(
-  `3` = list(
-    tdr = c(
-      epod = FILE_W3_TDR_EPOD,
-      bhs  = FILE_W3_TDR_BHS,
-      typ  = FILE_W3_TDR_TYP
-    ),
-    terros = c(
-      epod = FILE_W3_TERROS_EPOD,
-      bhs  = FILE_W3_TERROS_BHS,
-      typ  = FILE_W3_TERROS_TYP
-    )
+  `3` = c(
+    epod = FILE_W3_TDR_EPOD,
+    bhs  = FILE_W3_TDR_BHS,
+    typ  = FILE_W3_TDR_TYP
   ),
-  `9` = list(
-    tdr = c(
-      epod = FILE_W9_TDR_EPOD,
-      bhs  = FILE_W9_TDR_BHS,
-      typ  = FILE_W9_TDR_TYP
-    ),
-    terros = c(
-      epod = FILE_W9_TERROS_EPOD,
-      bhs  = FILE_W9_TERROS_BHS,
-      typ  = FILE_W9_TERROS_TYP
-    )
+  `9` = c(
+    epod = FILE_W9_TDR_EPOD,
+    bhs  = FILE_W9_TDR_BHS,
+    typ  = FILE_W9_TDR_TYP
   )
 )
 
@@ -88,6 +68,26 @@ soil_type_labels <- c(
   epod = "E Podzol",
   bhs  = "Bhs",
   typ  = "Typ"
+)
+
+depth_colors <- c(
+  "10" = "#1D4E89",
+  "30" = "#2C7FB8",
+  "50" = "#41B6C4"
+)
+
+watershed_colors <- c(
+  "3" = "#1D4E89",
+  "9" = "#41B6C4"
+)
+
+well_colors <- c(
+  "42_4_d1" = "#1D4E89",
+  "N1"      = "#2C7FB8",
+  "N5"      = "#41B6C4",
+  "159"     = "#0B3C5D",
+  "176"     = "#328CC1",
+  "179"     = "#7DB9DE"
 )
 
 # ----------------------------
@@ -115,26 +115,6 @@ plot_theme_blue <- function() {
     )
 }
 
-depth_colors <- c(
-  "10" = "#1D4E89",
-  "30" = "#2C7FB8",
-  "50" = "#41B6C4"
-)
-
-watershed_colors <- c(
-  "3" = "#1D4E89",
-  "9" = "#41B6C4"
-)
-
-well_colors <- c(
-  "42_4_d1" = "#1D4E89",
-  "N1"      = "#2C7FB8",
-  "N5"      = "#41B6C4",
-  "159"     = "#0B3C5D",
-  "176"     = "#328CC1",
-  "179"     = "#7DB9DE"
-)
-
 # ----------------------------
 # Helpers
 # ----------------------------
@@ -146,33 +126,20 @@ as_posix <- function(x) {
 read_soil_for_selection <- function(watershed, soil_key) {
   ws <- as.character(watershed)
   
-  tdr <- read_csv(soil_file_map[[ws]]$tdr[[soil_key]], show_col_types = FALSE) %>%
+  read_csv(soil_file_map[[ws]][[soil_key]], show_col_types = FALSE) %>%
     mutate(
       TIMESTAMP = as_posix(hour),
-      sensor = "TDR"
-    ) %>%
-    select(-hour)
-  
-  ter <- read_csv(soil_file_map[[ws]]$terros[[soil_key]], show_col_types = FALSE) %>%
-    mutate(
-      TIMESTAMP = as_posix(hour),
-      sensor = "Terros"
-    ) %>%
-    select(-hour) %>%
-    mutate(across(where(is.numeric), ~ ifelse(. < 0, NA, .)))
-  
-  bind_rows(tdr, ter) %>%
-    mutate(
       watershed = as.integer(watershed),
       soil_type = soil_key
-    )
+    ) %>%
+    select(-hour)
 }
 
 soil_long <- function(df) {
   df %>%
-    select(TIMESTAMP, sensor, watershed, soil_type, where(is.numeric)) %>%
+    select(TIMESTAMP, watershed, soil_type, where(is.numeric)) %>%
     pivot_longer(
-      cols = -c(TIMESTAMP, sensor, watershed, soil_type),
+      cols = -c(TIMESTAMP, watershed, soil_type),
       names_to = "series",
       values_to = "value"
     ) %>%
@@ -356,13 +323,22 @@ ui <- fluidPage(
         font-weight: 700;
         margin-bottom: 18px;
       }
-      .control-card, .plot-card, .readme-card {
+      .control-card, .readme-card {
         background: #F4F8FC;
         border: 1px solid #D6E4F0;
         border-radius: 14px;
         padding: 18px;
         margin-bottom: 18px;
         box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      }
+      .plot-stack {
+        margin-bottom: 28px;
+      }
+      .plot-title {
+        font-weight: 700;
+        color: #163A5F;
+        margin-bottom: 10px;
+        font-size: 20px;
       }
       .card-title {
         font-weight: 700;
@@ -399,16 +375,21 @@ ui <- fluidPage(
       .shiny-input-container {
         width: 100%;
       }
-      .hover-box {
-        margin-top: 12px;
-        padding: 10px 12px;
+      .shared-hover-panel {
+        margin-top: 8px;
+        margin-bottom: 22px;
+        padding: 14px 16px;
         background: #E9F2FB;
         border: 1px solid #C7DCEF;
         border-radius: 10px;
         color: #163A5F;
         font-size: 14px;
-        min-height: 48px;
         white-space: pre-wrap;
+      }
+      .shared-hover-title {
+        font-weight: 700;
+        font-size: 16px;
+        margin-bottom: 6px;
       }
       .readme-card h2, .readme-card h3 {
         color: #163A5F;
@@ -422,7 +403,7 @@ ui <- fluidPage(
       
       div(class = "main-title", h1("Hubbard Brook Experimental Forest: Watersheds 3 & 9")),
       
-      div("The data for these visualizations are sourced from the Hubbard Brook Experimental Forest, focusing on Watersheds 3 and 9. Select the parameters you want to explore and then click “Filter” to update the visualizations."),
+      div("The data for these visualizations are sourced from the Hubbard Brook Experimental Forest, focusing on Watersheds 3 and 9. Select the parameters you want to explore and then click “Apply Filters” to update the visualizations."),
       
       fluidRow(
         column(
@@ -438,7 +419,7 @@ ui <- fluidPage(
               
               fluidRow(
                 column(
-                  width = 4,
+                  width = 3,
                   checkboxGroupInput(
                     "watersheds",
                     "Watersheds",
@@ -447,7 +428,7 @@ ui <- fluidPage(
                   )
                 ),
                 column(
-                  width = 4,
+                  width = 3,
                   checkboxGroupInput(
                     "soil_types",
                     "Soil types",
@@ -456,7 +437,16 @@ ui <- fluidPage(
                   )
                 ),
                 column(
-                  width = 4,
+                  width = 3,
+                  checkboxGroupInput(
+                    "depths",
+                    "Soil depths (cm)",
+                    choices = c("10 cm" = 10, "30 cm" = 30, "50 cm" = 50),
+                    selected = c(10, 30, 50)
+                  )
+                ),
+                column(
+                  width = 3,
                   checkboxGroupInput(
                     "stream_metrics",
                     "Streamflow metrics",
@@ -486,43 +476,44 @@ ui <- fluidPage(
                 )
               ),
               br(),
-              helpText("Brush on any plot to zoom all plots to the same date range. Hover over a plot to see the nearest value. Select Reset Shared Zoom to return to original date ranges.")
+              helpText("Brush on any plot to zoom all plots to the same date range. Hover over any plot to see the nearest value in the shared hover panel above the plots.")
             )
           ),
           
           div(
-            class = "plot-card",
-            div(class = "card-title", "Soil Moisture"),
-            plotOutput("soil_plot", height = 360, brush = "soil_brush", hover = "soil_hover"),
-            div(class = "hover-box", textOutput("soil_hover_info"))
+            class = "shared-hover-panel",
+            div(class = "shared-hover-title", "Hover Details"),
+            textOutput("shared_hover_info")
           ),
           
           div(
-            class = "plot-card",
-            div(class = "card-title", "Water Table Depth"),
-            plotOutput("wt_plot", height = 360, brush = "wt_brush", hover = "wt_hover"),
-            div(class = "hover-box", textOutput("wt_hover_info"))
+            class = "plot-stack",
+            div(class = "plot-title", "Soil Moisture"),
+            plotOutput("soil_plot", height = 380, brush = "soil_brush", hover = "soil_hover")
           ),
           
           div(
-            class = "plot-card",
-            div(class = "card-title", "Snow Depth"),
-            plotOutput("snow_plot", height = 320, brush = "snow_brush", hover = "snow_hover"),
-            div(class = "hover-box", textOutput("snow_hover_info"))
+            class = "plot-stack",
+            div(class = "plot-title", "Water Table Depth"),
+            plotOutput("wt_plot", height = 360, brush = "wt_brush", hover = "wt_hover")
           ),
           
           div(
-            class = "plot-card",
-            div(class = "card-title", "Precipitation"),
-            plotOutput("precip_plot", height = 320, brush = "precip_brush", hover = "precip_hover"),
-            div(class = "hover-box", textOutput("precip_hover_info"))
+            class = "plot-stack",
+            div(class = "plot-title", "Snow Depth"),
+            plotOutput("snow_plot", height = 320, brush = "snow_brush", hover = "snow_hover")
           ),
           
           div(
-            class = "plot-card",
-            div(class = "card-title", "Streamflow"),
-            plotOutput("stream_plot", height = 360, brush = "stream_brush", hover = "stream_hover"),
-            div(class = "hover-box", textOutput("stream_hover_info"))
+            class = "plot-stack",
+            div(class = "plot-title", "Precipitation"),
+            plotOutput("precip_plot", height = 320, brush = "precip_brush", hover = "precip_hover")
+          ),
+          
+          div(
+            class = "plot-stack",
+            div(class = "plot-title", "Streamflow"),
+            plotOutput("stream_plot", height = 360, brush = "stream_brush", hover = "stream_hover")
           )
         )
       )
@@ -535,16 +526,17 @@ ui <- fluidPage(
         class = "readme-card",
         
         h2("App Overview"),
-        p("This Shiny application visualizes hydrological data from Watersheds 3 and 9 in the Hubbard Brook Experimental Forest. It supports comparison across watersheds, soil types, wells, and streamflow metrics using hourly aggregated datasets for faster performance."),
+        p("This Shiny application visualizes hydrological data from Watersheds 3 and 9 in the Hubbard Brook Experimental Forest. It supports comparison across watersheds, soil types, soil depths, wells, and streamflow metrics using hourly aggregated datasets for faster performance."),
         
         h3("Main Functions"),
         tags$ul(
           tags$li("Compare one or both watersheds at the same time"),
           tags$li("Compare one or more soil types"),
+          tags$li("Select one or more soil depths to display separately"),
           tags$li("Choose one or more streamflow metrics"),
           tags$li("Restrict the analysis to a custom date range"),
           tags$li("Zoom all plots together using a brushed time window"),
-          tags$li("Hover over plots to view the nearest values")
+          tags$li("Hover over plots to view the nearest values in one shared panel")
         ),
         
         h3("User Guide"),
@@ -553,29 +545,29 @@ ui <- fluidPage(
           tags$li("Expand the Filters section if it is collapsed."),
           tags$li("Select the watershed(s) you want to compare."),
           tags$li("Select the soil type(s) you want to compare."),
+          tags$li("Select the soil depth(s) you want to display."),
           tags$li("Select the streamflow metric(s) you want to display."),
           tags$li("Set the desired date range."),
           tags$li("Click Apply Filters to update all plots."),
           tags$li("Brush on any plot to zoom all plots to the same date range."),
           tags$li("Click Reset Shared Zoom to clear the shared zoom and remove all brush boxes."),
-          tags$li("Hover over any plot to see the nearest available observation in the hover details box below that plot.")
+          tags$li("Hover over any plot to see the nearest available observation in the shared hover panel above the plots.")
         ),
         
         h3("Plot Descriptions"),
         tags$ul(
-          tags$li(strong("Soil Moisture:"), " Compares TDR and Terros measurements for selected watershed and soil-type combinations. Depths are shown as 10, 30, and 50 cm."),
+          tags$li(strong("Soil Moisture:"), " Compares TDR measurements for selected watershed, soil-type, and depth combinations. Depths are shown as 10, 30, and 50 cm."),
           tags$li(strong("Water Table Depth:"), " Shows well depth measurements by watershed. The y-axis is reversed so deeper water-table depths appear lower, matching common hydrology convention."),
           tags$li(strong("Snow Depth:"), " Displays hourly snow depth over time, excluding zero values for clearer visualization."),
           tags$li(strong("Precipitation:"), " Displays hourly precipitation over time for the selected watershed(s)."),
-          tags$li(strong("Streamflow:"), " Displays one or more streamflow metrics, including gage height and discharge.")
+          tags$li(strong("Streamflow:"), " Displays selected streamflow metrics, currently discharge.")
         ),
         
         h3("Interaction Notes"),
         tags$ul(
           tags$li("All plots respond to the same date filters."),
           tags$li("All plots share the same brushed zoom window."),
-          tags$li("Hover details are shown below each plot rather than directly on the graph."),
-          tags$li("Negative Terros values are removed before plotting."),
+          tags$li("Hover details are shown in one shared panel above the plots."),
           tags$li("Water-table values below 0 cm or above 500 cm are removed before plotting.")
         )
       )
@@ -590,6 +582,7 @@ server <- function(input, output, session) {
   
   controls_open <- reactiveVal(TRUE)
   shared_zoom <- reactiveVal(NULL)
+  last_hovered_plot <- reactiveVal(NULL)
   
   update_shared_zoom <- function(brush_obj) {
     if (!is.null(brush_obj) && !is.null(brush_obj$xmin) && !is.null(brush_obj$xmax)) {
@@ -617,6 +610,12 @@ server <- function(input, output, session) {
   observeEvent(input$precip_brush, { update_shared_zoom(input$precip_brush) })
   observeEvent(input$stream_brush, { update_shared_zoom(input$stream_brush) })
   
+  observeEvent(input$soil_hover,   { last_hovered_plot("soil") })
+  observeEvent(input$wt_hover,     { last_hovered_plot("wt") })
+  observeEvent(input$snow_hover,   { last_hovered_plot("snow") })
+  observeEvent(input$precip_hover, { last_hovered_plot("precip") })
+  observeEvent(input$stream_hover, { last_hovered_plot("stream") })
+  
   observeEvent(input$reset_zoom, {
     shared_zoom(NULL)
     
@@ -636,6 +635,7 @@ server <- function(input, output, session) {
     list(
       watersheds = as.integer(input$watersheds),
       soil_types = input$soil_types,
+      depths = as.numeric(input$depths),
       stream_metrics = input$stream_metrics,
       date_range = input$date_range
     )
@@ -646,7 +646,8 @@ server <- function(input, output, session) {
     
     validate(
       need(length(f$watersheds) > 0, "Select at least one watershed."),
-      need(length(f$soil_types) > 0, "Select at least one soil type.")
+      need(length(f$soil_types) > 0, "Select at least one soil type."),
+      need(length(f$depths) > 0, "Select at least one soil depth.")
     )
     
     start_dt <- as.POSIXct(f$date_range[1], tz = "UTC")
@@ -659,10 +660,12 @@ server <- function(input, output, session) {
     })
     
     df <- soil_list %>%
-      filter(TIMESTAMP >= start_dt, TIMESTAMP <= end_dt)
+      filter(TIMESTAMP >= start_dt, TIMESTAMP <= end_dt) %>%
+      soil_long() %>%
+      filter(depth_cm %in% f$depths)
     
     validate(need(nrow(df) > 0, "No soil moisture rows found for this selection and date range."))
-    soil_long(df)
+    df
   })
   
   wt_df <- reactive({
@@ -749,11 +752,15 @@ server <- function(input, output, session) {
         TIMESTAMP,
         value,
         color = factor(depth_cm),
-        group = interaction(sensor, watershed, soil_type, depth_cm)
+        group = interaction(watershed, soil_type, depth_cm)
       )
     ) +
       geom_line(linewidth = 1.0, alpha = 0.98) +
-      facet_grid(sensor ~ paste("WS", watershed, "-", soil_label), scales = "free_y") +
+      facet_wrap(
+        ~ paste("WS", watershed, "-", soil_label),
+        ncol = 1,
+        scales = "free_y"
+      ) +
       scale_color_manual(values = depth_colors) +
       plot_theme_blue() +
       labs(
@@ -846,84 +853,108 @@ server <- function(input, output, session) {
     apply_shared_zoom(p, shared_zoom(), df$DateTime)
   })
   
-  output$soil_hover_info <- renderText({
-    df <- soil_df_long()
-    row <- nearest_row_with_hover(df, "TIMESTAMP", "value", input$soil_hover)
+  output$shared_hover_info <- renderText({
+    active_plot <- last_hovered_plot()
     
-    if (is.null(row)) {
-      return("Hover over the soil moisture plot to see the nearest observation.")
+    if (is.null(active_plot)) {
+      return("Hover over any plot to see the nearest observation.")
     }
     
-    paste0(
-      "Time: ", format(row$TIMESTAMP, "%Y-%m-%d %H:%M"), "\n",
-      "Sensor: ", row$sensor, "\n",
-      "Watershed: ", row$watershed, "\n",
-      "Soil type: ", row$soil_label, "\n",
-      "Depth: ", row$depth_cm, " cm\n",
-      "Value: ", round(row$value, 3)
-    )
-  })
-  
-  output$wt_hover_info <- renderText({
-    df <- wt_df()
-    row <- nearest_row_with_hover(df, "datetime", "wt_cm", input$wt_hover)
-    
-    if (is.null(row)) {
-      return("Hover over the water table plot to see the nearest observation.")
+    if (active_plot == "soil") {
+      row <- tryCatch(
+        nearest_row_with_hover(soil_df_long(), "TIMESTAMP", "value", input$soil_hover),
+        error = function(e) NULL
+      )
+      
+      if (is.null(row)) {
+        return("Hover over any plot to see the nearest observation.")
+      }
+      
+      return(paste0(
+        "Plot: Soil Moisture\n",
+        "Time: ", format(row$TIMESTAMP, "%Y-%m-%d %H:%M"), "\n",
+        "Watershed: ", row$watershed, "\n",
+        "Soil type: ", row$soil_label, "\n",
+        "Depth: ", row$depth_cm, " cm\n",
+        "Value: ", round(row$value, 3)
+      ))
     }
     
-    paste0(
-      "Time: ", format(row$datetime, "%Y-%m-%d %H:%M"), "\n",
-      "Watershed: ", row$watershed, "\n",
-      "Well: ", row$well_id, "\n",
-      "Water table depth: ", round(row$wt_cm, 2), " cm"
-    )
-  })
-  
-  output$snow_hover_info <- renderText({
-    df <- snow_df()
-    row <- nearest_row_with_hover(df, "date", "snow_cm", input$snow_hover)
-    
-    if (is.null(row)) {
-      return("Hover over the snow depth plot to see the nearest observation.")
+    if (active_plot == "wt") {
+      row <- tryCatch(
+        nearest_row_with_hover(wt_df(), "datetime", "wt_cm", input$wt_hover),
+        error = function(e) NULL
+      )
+      
+      if (is.null(row)) {
+        return("Hover over any plot to see the nearest observation.")
+      }
+      
+      return(paste0(
+        "Plot: Water Table Depth\n",
+        "Time: ", format(row$datetime, "%Y-%m-%d %H:%M"), "\n",
+        "Watershed: ", row$watershed, "\n",
+        "Well: ", row$well_id, "\n",
+        "Water table depth: ", round(row$wt_cm, 2), " cm"
+      ))
     }
     
-    paste0(
-      "Time: ", format(row$date, "%Y-%m-%d %H:%M"), "\n",
-      "Watershed: ", row$watershed, "\n",
-      "Snow depth: ", round(row$snow_cm, 2), " cm"
-    )
-  })
-  
-  output$precip_hover_info <- renderText({
-    df <- precip_df()
-    row <- nearest_row_with_hover(df, "DateTime", "precip", input$precip_hover)
-    
-    if (is.null(row)) {
-      return("Hover over the precipitation plot to see the nearest observation.")
+    if (active_plot == "snow") {
+      row <- tryCatch(
+        nearest_row_with_hover(snow_df(), "date", "snow_cm", input$snow_hover),
+        error = function(e) NULL
+      )
+      
+      if (is.null(row)) {
+        return("Hover over any plot to see the nearest observation.")
+      }
+      
+      return(paste0(
+        "Plot: Snow Depth\n",
+        "Time: ", format(row$date, "%Y-%m-%d %H:%M"), "\n",
+        "Watershed: ", row$watershed, "\n",
+        "Snow depth: ", round(row$snow_cm, 2), " cm"
+      ))
     }
     
-    paste0(
-      "Time: ", format(row$DateTime, "%Y-%m-%d %H:%M"), "\n",
-      "Watershed: ", row$watershed, "\n",
-      "Hourly precipitation: ", round(row$precip, 3)
-    )
-  })
-  
-  output$stream_hover_info <- renderText({
-    df <- stream_long()
-    row <- nearest_row_with_hover(df, "DateTime", "value", input$stream_hover)
-    
-    if (is.null(row)) {
-      return("Hover over the streamflow plot to see the nearest observation.")
+    if (active_plot == "precip") {
+      row <- tryCatch(
+        nearest_row_with_hover(precip_df(), "DateTime", "precip", input$precip_hover),
+        error = function(e) NULL
+      )
+      
+      if (is.null(row)) {
+        return("Hover over any plot to see the nearest observation.")
+      }
+      
+      return(paste0(
+        "Plot: Precipitation\n",
+        "Time: ", format(row$DateTime, "%Y-%m-%d %H:%M"), "\n",
+        "Watershed: ", row$watershed, "\n",
+        "Hourly precipitation: ", round(row$precip, 3)
+      ))
     }
     
-    paste0(
-      "Time: ", format(row$DateTime, "%Y-%m-%d %H:%M"), "\n",
-      "Watershed: ", row$watershed, "\n",
-      "Metric: ", row$metric, "\n",
-      "Value: ", round(row$value, 3)
-    )
+    if (active_plot == "stream") {
+      row <- tryCatch(
+        nearest_row_with_hover(stream_long(), "DateTime", "value", input$stream_hover),
+        error = function(e) NULL
+      )
+      
+      if (is.null(row)) {
+        return("Hover over any plot to see the nearest observation.")
+      }
+      
+      return(paste0(
+        "Plot: Streamflow\n",
+        "Time: ", format(row$DateTime, "%Y-%m-%d %H:%M"), "\n",
+        "Watershed: ", row$watershed, "\n",
+        "Metric: ", row$metric, "\n",
+        "Value: ", round(row$value, 3)
+      ))
+    }
+    
+    "Hover over any plot to see the nearest observation."
   })
 }
 
