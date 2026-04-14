@@ -4,7 +4,6 @@
 library(shiny)
 library(tidyverse)
 library(ggplot2)
-library(readxl)
 library(readr)
 
 # ----------------------------
@@ -94,24 +93,35 @@ well_colors <- c(
 # Plot styling
 # ----------------------------
 plot_theme_blue <- function() {
-  theme_classic(base_size = 15) +
+  theme_classic(base_size = 13) +
     theme(
-      plot.title = element_text(face = "bold", size = 18, color = "#163A5F"),
-      axis.title = element_text(size = 14, color = "#163A5F"),
-      axis.text = element_text(size = 12, color = "#24476B"),
-      axis.line = element_line(color = "#4F6D8A", linewidth = 0.6),
-      axis.ticks = element_line(color = "#4F6D8A", linewidth = 0.5),
+      plot.title = element_blank(),
+      axis.title.x = element_blank(),
+      axis.text.x = element_text(size = 10, color = "#24476B"),
+      axis.ticks.x = element_line(color = "#4F6D8A", linewidth = 0.4),
+      axis.line.x = element_line(color = "#4F6D8A", linewidth = 0.5),
+      axis.title.y = element_text(size = 12, color = "#163A5F"),
+      axis.text.y = element_text(size = 10, color = "#24476B"),
+      axis.line = element_line(color = "#4F6D8A", linewidth = 0.5),
+      axis.ticks = element_line(color = "#4F6D8A", linewidth = 0.4),
       panel.background = element_rect(fill = "#F4F8FC", color = NA),
       plot.background = element_rect(fill = "#F4F8FC", color = NA),
       legend.background = element_rect(fill = "#F4F8FC", color = NA),
       legend.key = element_rect(fill = "#F4F8FC", color = NA),
-      legend.text = element_text(color = "#24476B", size = 12),
-      legend.title = element_text(color = "#163A5F", face = "bold", size = 13),
+      legend.text = element_text(color = "#24476B", size = 10),
+      legend.title = element_text(color = "#163A5F", face = "bold", size = 11),
       strip.background = element_rect(fill = "#DCEAF7", color = "#A9C4DD"),
-      strip.text = element_text(color = "#163A5F", face = "bold", size = 13),
+      strip.text = element_text(color = "#163A5F", face = "bold", size = 11),
       legend.position = "top",
       legend.direction = "horizontal",
-      legend.box.margin = margin(0, 0, -6, 0)
+      legend.box.margin = margin(0, 0, -8, 0),
+      plot.tag = element_text(
+        size = 13,
+        face = "bold",
+        color = "#163A5F"
+      ),
+      plot.tag.position = c(0.01, 0.98),
+      plot.margin = margin(2, 2, 2, 70)
     )
 }
 
@@ -192,7 +202,7 @@ apply_shared_zoom <- function(p, zoom_range, time_values) {
     return(p)
   }
   
-  p + coord_cartesian(xlim = c(zoom_min, zoom_max))
+  p + coord_cartesian(xlim = c(zoom_min, zoom_max), clip = "off")
 }
 
 nearest_row_with_hover <- function(df, time_col, value_col, hover_obj) {
@@ -321,24 +331,18 @@ ui <- fluidPage(
       .main-title {
         color: #163A5F;
         font-weight: 700;
-        margin-bottom: 18px;
+        margin-bottom: 12px;
       }
       .control-card, .readme-card {
         background: #F4F8FC;
         border: 1px solid #D6E4F0;
         border-radius: 14px;
         padding: 18px;
-        margin-bottom: 18px;
+        margin-bottom: 14px;
         box-shadow: 0 2px 6px rgba(0,0,0,0.05);
       }
       .plot-stack {
-        margin-bottom: 28px;
-      }
-      .plot-title {
-        font-weight: 700;
-        color: #163A5F;
-        margin-bottom: 10px;
-        font-size: 20px;
+        margin-bottom: 4px;
       }
       .card-title {
         font-weight: 700;
@@ -362,7 +366,7 @@ ui <- fluidPage(
         padding: 8px 14px;
         width: 100%;
         text-align: left;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
       }
       .zoom-btn {
         width: auto;
@@ -376,9 +380,9 @@ ui <- fluidPage(
         width: 100%;
       }
       .shared-hover-panel {
-        margin-top: 8px;
-        margin-bottom: 22px;
-        padding: 14px 16px;
+        margin-top: 4px;
+        margin-bottom: 10px;
+        padding: 10px 12px;
         background: #E9F2FB;
         border: 1px solid #C7DCEF;
         border-radius: 10px;
@@ -486,35 +490,20 @@ ui <- fluidPage(
             textOutput("shared_hover_info")
           ),
           
-          div(
-            class = "plot-stack",
-            div(class = "plot-title", "Soil Moisture"),
-            plotOutput("soil_plot", height = 380, brush = "soil_brush", hover = "soil_hover")
-          ),
+          div(class = "plot-stack",
+              plotOutput("soil_plot", height = 300, brush = "soil_brush", hover = "soil_hover")),
           
-          div(
-            class = "plot-stack",
-            div(class = "plot-title", "Water Table Depth"),
-            plotOutput("wt_plot", height = 360, brush = "wt_brush", hover = "wt_hover")
-          ),
+          div(class = "plot-stack",
+              plotOutput("wt_plot", height = 300, brush = "wt_brush", hover = "wt_hover")),
           
-          div(
-            class = "plot-stack",
-            div(class = "plot-title", "Snow Depth"),
-            plotOutput("snow_plot", height = 320, brush = "snow_brush", hover = "snow_hover")
-          ),
+          div(class = "plot-stack",
+              plotOutput("snow_plot", height = 260, brush = "snow_brush", hover = "snow_hover")),
           
-          div(
-            class = "plot-stack",
-            div(class = "plot-title", "Precipitation"),
-            plotOutput("precip_plot", height = 320, brush = "precip_brush", hover = "precip_hover")
-          ),
+          div(class = "plot-stack",
+              plotOutput("precip_plot", height = 260, brush = "precip_brush", hover = "precip_hover")),
           
-          div(
-            class = "plot-stack",
-            div(class = "plot-title", "Streamflow"),
-            plotOutput("stream_plot", height = 360, brush = "stream_brush", hover = "stream_hover")
-          )
+          div(class = "plot-stack",
+              plotOutput("stream_plot", height = 300, brush = "stream_brush", hover = "stream_hover"))
         )
       )
     ),
@@ -537,38 +526,6 @@ ui <- fluidPage(
           tags$li("Restrict the analysis to a custom date range"),
           tags$li("Zoom all plots together using a brushed time window"),
           tags$li("Hover over plots to view the nearest values in one shared panel")
-        ),
-        
-        h3("User Guide"),
-        tags$ol(
-          tags$li("Open the Dashboard tab."),
-          tags$li("Expand the Filters section if it is collapsed."),
-          tags$li("Select the watershed(s) you want to compare."),
-          tags$li("Select the soil type(s) you want to compare."),
-          tags$li("Select the soil depth(s) you want to display."),
-          tags$li("Select the streamflow metric(s) you want to display."),
-          tags$li("Set the desired date range."),
-          tags$li("Click Apply Filters to update all plots."),
-          tags$li("Brush on any plot to zoom all plots to the same date range."),
-          tags$li("Click Reset Shared Zoom to clear the shared zoom and remove all brush boxes."),
-          tags$li("Hover over any plot to see the nearest available observation in the shared hover panel above the plots.")
-        ),
-        
-        h3("Plot Descriptions"),
-        tags$ul(
-          tags$li(strong("Soil Moisture:"), " Compares TDR measurements for selected watershed, soil-type, and depth combinations. Depths are shown as 10, 30, and 50 cm."),
-          tags$li(strong("Water Table Depth:"), " Shows well depth measurements by watershed. The y-axis is reversed so deeper water-table depths appear lower, matching common hydrology convention."),
-          tags$li(strong("Snow Depth:"), " Displays hourly snow depth over time, excluding zero values for clearer visualization."),
-          tags$li(strong("Precipitation:"), " Displays hourly precipitation over time for the selected watershed(s)."),
-          tags$li(strong("Streamflow:"), " Displays selected streamflow metrics, currently discharge.")
-        ),
-        
-        h3("Interaction Notes"),
-        tags$ul(
-          tags$li("All plots respond to the same date filters."),
-          tags$li("All plots share the same brushed zoom window."),
-          tags$li("Hover details are shown in one shared panel above the plots."),
-          tags$li("Water-table values below 0 cm or above 500 cm are removed before plotting.")
         )
       )
     )
@@ -618,7 +575,6 @@ server <- function(input, output, session) {
   
   observeEvent(input$reset_zoom, {
     shared_zoom(NULL)
-    
     session$resetBrush("soil_brush")
     session$resetBrush("wt_brush")
     session$resetBrush("snow_brush")
@@ -764,10 +720,9 @@ server <- function(input, output, session) {
       scale_color_manual(values = depth_colors) +
       plot_theme_blue() +
       labs(
-        title = "Soil Moisture Comparison",
-        x = "",
         y = "Soil moisture",
-        color = "Depth (cm)"
+        color = "Depth (cm)",
+        tag = "Soil Moisture"
       )
     
     apply_shared_zoom(p, shared_zoom(), df$TIMESTAMP)
@@ -788,10 +743,9 @@ server <- function(input, output, session) {
       ) +
       plot_theme_blue() +
       labs(
-        title = "Water Table Depth Comparison",
-        x = "",
         y = "Water Table Depth (cm)",
-        color = "Well"
+        color = "Well",
+        tag = "Water Table"
       )
     
     apply_shared_zoom(p, shared_zoom(), df$datetime)
@@ -806,10 +760,9 @@ server <- function(input, output, session) {
       scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
       plot_theme_blue() +
       labs(
-        title = "Snow Depth Comparison",
-        x = "",
         y = "Snow Depth (cm)",
-        color = "Watershed"
+        color = "Watershed",
+        tag = "Snow Depth"
       )
     
     apply_shared_zoom(p, shared_zoom(), df$date)
@@ -824,10 +777,9 @@ server <- function(input, output, session) {
       scale_y_reverse() +
       plot_theme_blue() +
       labs(
-        title = "Precipitation Comparison",
-        x = "",
         y = "Hourly Precipitation",
-        color = "Watershed"
+        color = "Watershed",
+        tag = "Precipitation"
       )
     
     apply_shared_zoom(p, shared_zoom(), df$DateTime)
@@ -844,10 +796,9 @@ server <- function(input, output, session) {
       facet_wrap(~ metric, ncol = 1, scales = "free_y") +
       plot_theme_blue() +
       labs(
-        title = "Streamflow Comparison",
-        x = "",
         y = NULL,
-        color = "Watershed"
+        color = "Watershed",
+        tag = "Streamflow"
       )
     
     apply_shared_zoom(p, shared_zoom(), df$DateTime)
@@ -865,10 +816,7 @@ server <- function(input, output, session) {
         nearest_row_with_hover(soil_df_long(), "TIMESTAMP", "value", input$soil_hover),
         error = function(e) NULL
       )
-      
-      if (is.null(row)) {
-        return("Hover over any plot to see the nearest observation.")
-      }
+      if (is.null(row)) return("Hover over any plot to see the nearest observation.")
       
       return(paste0(
         "Plot: Soil Moisture\n",
@@ -885,10 +833,7 @@ server <- function(input, output, session) {
         nearest_row_with_hover(wt_df(), "datetime", "wt_cm", input$wt_hover),
         error = function(e) NULL
       )
-      
-      if (is.null(row)) {
-        return("Hover over any plot to see the nearest observation.")
-      }
+      if (is.null(row)) return("Hover over any plot to see the nearest observation.")
       
       return(paste0(
         "Plot: Water Table Depth\n",
@@ -904,10 +849,7 @@ server <- function(input, output, session) {
         nearest_row_with_hover(snow_df(), "date", "snow_cm", input$snow_hover),
         error = function(e) NULL
       )
-      
-      if (is.null(row)) {
-        return("Hover over any plot to see the nearest observation.")
-      }
+      if (is.null(row)) return("Hover over any plot to see the nearest observation.")
       
       return(paste0(
         "Plot: Snow Depth\n",
@@ -922,10 +864,7 @@ server <- function(input, output, session) {
         nearest_row_with_hover(precip_df(), "DateTime", "precip", input$precip_hover),
         error = function(e) NULL
       )
-      
-      if (is.null(row)) {
-        return("Hover over any plot to see the nearest observation.")
-      }
+      if (is.null(row)) return("Hover over any plot to see the nearest observation.")
       
       return(paste0(
         "Plot: Precipitation\n",
@@ -940,10 +879,7 @@ server <- function(input, output, session) {
         nearest_row_with_hover(stream_long(), "DateTime", "value", input$stream_hover),
         error = function(e) NULL
       )
-      
-      if (is.null(row)) {
-        return("Hover over any plot to see the nearest observation.")
-      }
+      if (is.null(row)) return("Hover over any plot to see the nearest observation.")
       
       return(paste0(
         "Plot: Streamflow\n",
