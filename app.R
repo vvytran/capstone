@@ -515,51 +515,81 @@ ui <- fluidPage(
       div(
         class = "readme-card",
         
-        h2("App Overview"),
-        p("This Shiny application visualizes hydrological data from Watersheds 3 and 9 in the Hubbard Brook Experimental Forest. It supports comparison across watersheds, soil types, soil depths, wells, and streamflow metrics using hourly aggregated datasets for faster performance."),
+        h2("Introduction"),
+        p("This Shiny application visualizes hydrology data from Watersheds 3 and 9 in the Hubbard Brook Experimental Forest. It is useful because it allows users to compare multiple watershed variables, including soil moisture, water table depth, snow depth, precipitation, and streamflow, in one interactive dashboard."),
         
-        h3("Main Functions"),
+        h2("Summary of Functions"),
         tags$ul(
-          tags$li("Compare one or both watersheds at the same time"),
-          tags$li("Compare one or more soil types"),
-          tags$li("Select one or more soil depths to display separately"),
-          tags$li("Choose one or more streamflow metrics"),
-          tags$li("Restrict the analysis to a custom date range"),
-          tags$li("Zoom all plots together using a brushed time window"),
-          tags$li("Hover over plots to view the nearest values in one shared panel")
+          tags$li("Compare one or both watersheds at the same time."),
+          tags$li("Filter soil moisture data by soil type and soil depth."),
+          tags$li("View soil moisture, water table depth, snow depth, precipitation, and streamflow plots."),
+          tags$li("Use a shared date range filter to narrow the time period."),
+          tags$li("Brush on any plot to zoom all plots to the same date range."),
+          tags$li("Hover over plots to view the nearest observation in one shared hover panel.")
         ),
         
-        h3("User Guide"),
+        h2("How to Use"),
         tags$ol(
           tags$li("Open the Dashboard tab."),
-          tags$li("Expand the Filters section if it is collapsed."),
-          tags$li("Select the watershed(s) you want to compare."),
-          tags$li("Select the soil type(s) you want to compare."),
-          tags$li("Select the soil depth(s) you want to display."),
-          tags$li("Select the streamflow metric(s) you want to display."),
+          tags$li("Use the Watersheds filter to select Watershed 3, Watershed 9, or both."),
+          tags$li("Use the Soil types filter to select E Podzol, Bhs, or Typ."),
+          tags$li("Use the Soil depths filter to select 10 cm, 30 cm, 50 cm, or a combination of depths."),
           tags$li("Set the desired date range."),
-          tags$li("Click Apply Filters to update all plots."),
-          tags$li("Brush on any plot to zoom all plots to the same date range."),
-          tags$li("Click Reset Shared Zoom to clear the shared zoom and remove all brush boxes."),
-          tags$li("Hover over any plot to see the nearest available observation in the shared hover panel above the plots.")
+          tags$li("Click Apply Filters to update the plots."),
+          tags$li("Brush across any plot to zoom all plots to that date range."),
+          tags$li("Click Reset Shared Zoom to return to the full selected date range."),
+          tags$li("Hover over a plot to view the nearest data value in the hover details box.")
         ),
         
-        h3("Plot Descriptions"),
+        h2("Libraries and Versions"),
+        p("This app uses the following R libraries:"),
         tags$ul(
-          tags$li(strong("Soil Moisture:"), " Compares TDR measurements for selected watershed, soil-type, and depth combinations. Depths are shown as 10, 30, and 50 cm."),
-          tags$li(strong("Water Table Depth:"), " Shows well depth measurements by watershed. The y-axis is reversed so deeper water-table depths appear lower, matching common hydrology convention."),
-          tags$li(strong("Snow Depth:"), " Displays hourly snow depth over time, excluding zero values for clearer visualization."),
-          tags$li(strong("Precipitation:"), " Displays hourly precipitation over time for the selected watershed(s)."),
-          tags$li(strong("Streamflow:"), " Displays selected streamflow metrics, currently discharge.")
+          tags$li("shiny"),
+          tags$li("tidyverse"),
+          tags$li("ggplot2"),
+          tags$li("readxl"),
+          tags$li("readr")
+        ),
+        p("Package versions may vary depending on the computer running the app. To check versions, run packageVersion('shiny'), packageVersion('tidyverse'), packageVersion('ggplot2'), packageVersion('readxl'), and packageVersion('readr') in R."),
+        
+        h2("Data Used and Metadata"),
+        p("The app uses hourly hydrology datasets from the Hubbard Brook Experimental Forest for Watersheds 3 and 9."),
+        tags$ul(
+          tags$li("Soil moisture data: TDR soil moisture files by watershed and soil type."),
+          tags$li("Soil depths: 10 cm, 30 cm, and 50 cm."),
+          tags$li("Water table data: well records for selected wells in Watersheds 3 and 9."),
+          tags$li("Snow data: hourly snow depth for Watersheds 3 and 9."),
+          tags$li("Precipitation data: hourly precipitation for Watersheds 3 and 9."),
+          tags$li("Streamflow data: discharge values for Watersheds 3 and 9.")
+        ),
+        p("The main time field used across datasets is converted to POSIXct format so that all plots can share the same date range and zoom behavior."),
+        
+        h2("Known Issues"),
+        tags$ul(
+          tags$li("Some filters may return no data if the selected date range does not overlap with available observations."),
+          tags$li("Large date ranges may take longer to load because multiple files are read and plotted."),
+          tags$li("The precipitation plot currently uses a reversed y-axis, which may need to be adjusted depending on the preferred hydrology convention."),
+          tags$li("Hover values are based on the nearest point and may not exactly match the cursor location."),
+          tags$li("Terros soil moisture data is not included in this version of the app.")
         ),
         
-        h3("Interaction Notes"),
+        h2("Future Features"),
         tags$ul(
-          tags$li("All plots respond to the same date filters."),
-          tags$li("All plots share the same brushed zoom window."),
-          tags$li("Hover details are shown in one shared panel above the plots."),
-          tags$li("Water-table values below 0 cm or above 500 cm are removed before plotting.")
-        )
+          tags$li("Add an option to switch Terros data on or off."),
+          tags$li("Allow users to download filtered datasets."),
+          tags$li("Add summary statistics for selected date ranges."),
+          tags$li("Add clearer units and metadata descriptions for every variable."),
+          tags$li("Improve performance by loading selected datasets only when needed."),
+          tags$li("Add screenshots or example views of the dashboard.")
+        ),
+        
+        h2("References and Resources"),
+        tags$ul(
+          tags$li("Hubbard Brook Experimental Forest data resources."),
+          tags$li("R Shiny documentation."),
+          tags$li("ggplot2 documentation."),
+          tags$li("tidyverse documentation.")
+          )
       )
     )
   )
